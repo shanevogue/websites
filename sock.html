@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOCK — The Legend</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Unbounded:wght@900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sock-red: #ff2d2d;
+    --sock-yellow: #ffe000;
+    --sock-blue: #0057ff;
+    --sock-white: #f0ede6;
+    --sock-black: #0a0a0a;
+    --sock-pink: #ff6bff;
+    --sock-green: #00ff88;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--sock-black);
+    color: var(--sock-white);
+    font-family: 'Space Mono', monospace;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CUSTOM CURSOR */
+  .cursor {
+    width: 32px; height: 32px;
+    border: 3px solid var(--sock-yellow);
+    border-radius: 0;
+    position: fixed;
+    pointer-events: none;
+    z-index: 99999;
+    transform: translate(-50%, -50%) rotate(45deg);
+    transition: transform 0.1s, background 0.15s;
+    mix-blend-mode: difference;
+  }
+  .cursor-dot {
+    width: 6px; height: 6px;
+    background: var(--sock-yellow);
+    position: fixed;
+    pointer-events: none;
+    z-index: 99999;
+    transform: translate(-50%, -50%);
+    mix-blend-mode: difference;
+  }
+  body:hover .cursor { background: rgba(255,224,0,0.1); }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0.35;
+  }
+
+  /* SCANLINES */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.07) 2px,
+      rgba(0,0,0,0.07) 4px
+    );
+    pointer-events: none;
+    z-index: 9997;
+  }
+
+  /* ============ HERO ============ */
+  #hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background: var(--sock-black);
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 60% at 20% 50%, rgba(0,87,255,0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 50% at 80% 30%, rgba(255,45,45,0.15) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 60% 80%, rgba(255,107,255,0.1) 0%, transparent 70%);
+    animation: bgPulse 8s ease-in-out infinite alternate;
+  }
+  @keyframes bgPulse {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+  }
+
+  /* floating sock SVGs in background */
+  .bg-sock {
+    position: absolute;
+    opacity: 0.04;
+    animation: floatSock linear infinite;
+    font-size: 80px;
+    user-select: none;
+    filter: blur(0px);
+  }
+
+  @keyframes floatSock {
+    0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.06; }
+    90% { opacity: 0.06; }
+    100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+  }
+
+  .grid-overlay {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,224,0,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,224,0,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridShift 20s linear infinite;
+  }
+  @keyframes gridShift {
+    from { transform: translateY(0); }
+    to { transform: translateY(60px); }
+  }
+
+  .hero-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    color: var(--sock-yellow);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.3s forwards;
+    border: 1px solid rgba(255,224,0,0.3);
+    padding: 6px 16px;
+  }
+
+  .hero-title {
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 900;
+    font-size: clamp(80px, 18vw, 220px);
+    line-height: 0.9;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .title-sock {
+    display: block;
+    color: var(--sock-white);
+    opacity: 0;
+    animation: titleCrash 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
+    -webkit-text-stroke: 2px var(--sock-yellow);
+    text-shadow:
+      8px 8px 0 var(--sock-red),
+      -2px -2px 0 var(--sock-blue);
+  }
+
+  .title-discord {
+    display: block;
+    font-size: clamp(16px, 3vw, 36px);
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    color: var(--sock-pink);
+    letter-spacing: 0.3em;
+    opacity: 0;
+    animation: fadeUp 0.7s ease 1s forwards;
+    margin-top: 12px;
+    text-align: center;
+  }
+
+  @keyframes titleCrash {
+    0% { transform: translateY(-80px) skewX(-5deg); opacity: 0; }
+    60% { transform: translateY(10px) skewX(1deg); }
+    100% { transform: translateY(0) skewX(0); opacity: 1; }
+  }
+
+  @keyframes fadeUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .hero-sub {
+    margin-top: 40px;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    color: rgba(240,237,230,0.5);
+    opacity: 0;
+    animation: fadeUp 0.7s ease 1.2s forwards;
+    text-align: center;
+    max-width: 500px;
+    line-height: 1.8;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeUp 0.7s ease 1.8s forwards;
+  }
+  .scroll-hint span {
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: rgba(255,224,0,0.5);
+    text-transform: uppercase;
+  }
+  .scroll-arrow {
+    width: 2px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--sock-yellow), transparent);
+    animation: scrollArrow 1.5s ease-in-out infinite;
+  }
+  @keyframes scrollArrow {
+    0%, 100% { opacity: 0.3; transform: scaleY(0.6); }
+    50% { opacity: 1; transform: scaleY(1); }
+  }
+
+  /* glitch effect on title hover */
+  .title-sock:hover {
+    animation: glitch 0.3s ease-in-out;
+  }
+  @keyframes glitch {
+    0%, 100% { text-shadow: 8px 8px 0 var(--sock-red), -2px -2px 0 var(--sock-blue); clip-path: none; }
+    20% { text-shadow: -8px 8px 0 var(--sock-red), 4px -2px 0 var(--sock-blue); clip-path: polygon(0 20%, 100% 20%, 100% 40%, 0 40%); transform: translateX(-4px); }
+    40% { text-shadow: 12px -4px 0 var(--sock-pink), -6px 6px 0 var(--sock-green); clip-path: polygon(0 60%, 100% 60%, 100% 75%, 0 75%); transform: translateX(4px); }
+    60% { text-shadow: -4px 8px 0 var(--sock-blue), 8px -8px 0 var(--sock-red); clip-path: none; transform: translateX(-2px); }
+    80% { text-shadow: 4px 4px 0 var(--sock-yellow), -8px 2px 0 var(--sock-pink); clip-path: polygon(0 0, 100% 0, 100% 15%, 0 15%); transform: translateX(2px); }
+  }
+
+  /* ============ TICKER ============ */
+  .ticker-wrap {
+    width: 100%;
+    background: var(--sock-yellow);
+    padding: 14px 0;
+    overflow: hidden;
+    position: relative;
+    z-index: 10;
+  }
+  .ticker-track {
+    display: flex;
+    width: max-content;
+    animation: ticker 25s linear infinite;
+    gap: 0;
+  }
+  .ticker-item {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.1em;
+    color: var(--sock-black);
+    padding: 0 40px;
+    white-space: nowrap;
+  }
+  .ticker-item .dot {
+    color: var(--sock-red);
+    margin: 0 20px;
+  }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ============ SECTIONS ============ */
+  section {
+    padding: 120px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.5em;
+    color: var(--sock-yellow);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .section-label::before {
+    content: '';
+    display: inline-block;
+    width: 40px;
+    height: 1px;
+    background: var(--sock-yellow);
+  }
+
+  /* ============ STATS ============ */
+  #stats {
+    padding: 80px 0;
+    background: linear-gradient(135deg, rgba(0,87,255,0.08), rgba(255,45,45,0.08));
+    border-top: 1px solid rgba(255,224,0,0.15);
+    border-bottom: 1px solid rgba(255,224,0,0.15);
+    max-width: 100%;
+  }
+  #stats .inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+  }
+  .stat-card {
+    text-align: center;
+    padding: 40px 20px;
+    border-right: 1px solid rgba(255,224,0,0.12);
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+  }
+  .stat-card:last-child { border-right: none; }
+  .stat-card:hover {
+    background: rgba(255,224,0,0.04);
+  }
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    line-height: 1;
+    color: var(--sock-yellow);
+    display: block;
+    text-shadow: 4px 4px 0 rgba(255,45,45,0.4);
+    transition: transform 0.3s;
+  }
+  .stat-card:hover .stat-num { transform: scale(1.05); }
+  .stat-label {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: rgba(240,237,230,0.5);
+    text-transform: uppercase;
+    margin-top: 8px;
+    display: block;
+  }
+
+  /* ============ SOCK MANIFESTO ============ */
+  #manifesto {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+  }
+
+  .manifesto-left h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 6vw, 90px);
+    line-height: 0.95;
+    color: var(--sock-white);
+    margin-bottom: 40px;
+  }
+  .manifesto-left h2 em {
+    color: var(--sock-yellow);
+    font-style: normal;
+    display: block;
+  }
+
+  .manifesto-left p {
+    font-size: 14px;
+    line-height: 2;
+    color: rgba(240,237,230,0.65);
+    margin-bottom: 24px;
+  }
+
+  .sock-visual {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+  }
+
+  .sock-big {
+    font-size: 220px;
+    line-height: 1;
+    animation: sockFloat 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 60px rgba(255,224,0,0.3)) drop-shadow(0 0 120px rgba(0,87,255,0.2));
+    user-select: none;
+    position: relative;
+    z-index: 2;
+  }
+  @keyframes sockFloat {
+    0%, 100% { transform: translateY(0) rotate(-8deg); }
+    50% { transform: translateY(-20px) rotate(8deg); }
+  }
+
+  .sock-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(255,224,0,0.15);
+    animation: ringPulse 3s ease-in-out infinite;
+  }
+  .sock-ring:nth-child(1) { width: 280px; height: 280px; animation-delay: 0s; }
+  .sock-ring:nth-child(2) { width: 380px; height: 380px; animation-delay: 0.6s; }
+  .sock-ring:nth-child(3) { width: 480px; height: 480px; animation-delay: 1.2s; }
+
+  @keyframes ringPulse {
+    0%, 100% { transform: scale(1); opacity: 0.3; }
+    50% { transform: scale(1.05); opacity: 0.6; }
+  }
+
+  /* ============ SOCK TYPES GRID ============ */
+  #varieties {
+    padding-top: 0;
+  }
+
+  .varieties-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(40px, 5vw, 72px);
+    margin-bottom: 60px;
+    color: var(--sock-white);
+  }
+  .varieties-title span { color: var(--sock-red); }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+
+  .sock-card {
+    background: #111;
+    padding: 48px 36px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  .sock-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--card-accent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .sock-card:hover { transform: translateY(-4px); }
+  .sock-card:hover::before { opacity: 0.06; }
+
+  .sock-card-emoji {
+    font-size: 52px;
+    display: block;
+    margin-bottom: 24px;
+    transition: transform 0.3s;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+  }
+  .sock-card:hover .sock-card-emoji { transform: scale(1.15) rotate(10deg); }
+
+  .sock-card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+    color: var(--sock-white);
+  }
+  .sock-card-desc {
+    font-size: 12px;
+    line-height: 1.8;
+    color: rgba(240,237,230,0.45);
+  }
+  .sock-card-num {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px;
+    color: rgba(255,255,255,0.04);
+    line-height: 1;
+  }
+  .sock-card-tag {
+    display: inline-block;
+    margin-top: 20px;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    padding: 4px 12px;
+    border: 1px solid;
+    text-transform: uppercase;
+    color: var(--tag-color);
+    border-color: var(--tag-color);
+    opacity: 0.7;
+  }
+
+  /* ============ MARQUEE SECTION ============ */
+  .marquee-section {
+    padding: 60px 0;
+    overflow: hidden;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    background: #0d0d0d;
+    max-width: 100%;
+  }
+  .marquee-row {
+    display: flex;
+    gap: 0;
+    width: max-content;
+    margin-bottom: 20px;
+  }
+  .marquee-row:nth-child(1) { animation: marq1 20s linear infinite; }
+  .marquee-row:nth-child(2) { animation: marq2 25s linear infinite; }
+  @keyframes marq1 { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @keyframes marq2 { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+
+  .marquee-item {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    padding: 0 32px;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+  .marquee-item.outline {
+    -webkit-text-stroke: 1px rgba(255,224,0,0.4);
+    color: transparent;
+  }
+  .marquee-item.fill { color: rgba(255,224,0,0.12); }
+
+  /* ============ HALL OF FAME ============ */
+  #fame {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 80px;
+    align-items: start;
+  }
+
+  .fame-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(40px, 5vw, 72px);
+    line-height: 1;
+    margin-bottom: 48px;
+  }
+  .fame-title .accent { color: var(--sock-pink); }
+
+  .quote-block {
+    border-left: 3px solid var(--sock-yellow);
+    padding: 24px 32px;
+    background: rgba(255,224,0,0.04);
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, background 0.3s;
+  }
+  .quote-block:hover {
+    background: rgba(255,224,0,0.08);
+  }
+  .quote-block::before {
+    content: '"';
+    position: absolute;
+    top: -20px; right: 16px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 120px;
+    color: rgba(255,224,0,0.06);
+    line-height: 1;
+  }
+  .quote-text {
+    font-size: 14px;
+    line-height: 1.8;
+    color: rgba(240,237,230,0.75);
+    margin-bottom: 12px;
+  }
+  .quote-author {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--sock-yellow);
+    text-transform: uppercase;
+  }
+
+  .discord-card {
+    background: #1a1a2e;
+    border: 1px solid rgba(255,107,255,0.2);
+    padding: 32px;
+    position: sticky;
+    top: 40px;
+  }
+  .discord-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .discord-avatar {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--sock-blue), var(--sock-pink));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    animation: avatarGlow 3s ease-in-out infinite alternate;
+  }
+  @keyframes avatarGlow {
+    from { box-shadow: 0 0 20px rgba(0,87,255,0.4); }
+    to { box-shadow: 0 0 40px rgba(255,107,255,0.6); }
+  }
+  .discord-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--sock-white);
+  }
+  .discord-status {
+    font-size: 11px;
+    color: var(--sock-green);
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .discord-status::before {
+    content: '';
+    width: 7px; height: 7px;
+    background: var(--sock-green);
+    border-radius: 50%;
+    display: inline-block;
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .discord-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .d-stat {
+    background: rgba(255,255,255,0.04);
+    padding: 16px;
+    text-align: center;
+  }
+  .d-stat-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: var(--sock-pink);
+    display: block;
+  }
+  .d-stat-key {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+  }
+
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .badge {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    padding: 5px 10px;
+    text-transform: uppercase;
+    border: 1px solid;
+    transition: all 0.2s;
+  }
+  .badge:hover { transform: scale(1.05); }
+  .badge.blue { color: var(--sock-blue); border-color: var(--sock-blue); background: rgba(0,87,255,0.1); }
+  .badge.yellow { color: var(--sock-yellow); border-color: var(--sock-yellow); background: rgba(255,224,0,0.1); }
+  .badge.pink { color: var(--sock-pink); border-color: var(--sock-pink); background: rgba(255,107,255,0.1); }
+  .badge.green { color: var(--sock-green); border-color: var(--sock-green); background: rgba(0,255,136,0.1); }
+  .badge.red { color: var(--sock-red); border-color: var(--sock-red); background: rgba(255,45,45,0.1); }
+
+  /* ============ INTERACTIVE SOCK GENERATOR ============ */
+  #generator {
+    background: #0d0d0d;
+    max-width: 100%;
+    padding: 100px 40px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  #generator .inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  #generator h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(40px, 5vw, 80px);
+    margin-bottom: 16px;
+  }
+  #generator h2 span { color: var(--sock-yellow); }
+  #generator p {
+    font-size: 13px;
+    color: rgba(240,237,230,0.45);
+    letter-spacing: 0.15em;
+    margin-bottom: 60px;
+  }
+
+  .gen-output {
+    background: #111;
+    border: 1px solid rgba(255,224,0,0.15);
+    padding: 48px;
+    margin-bottom: 40px;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .gen-output::before {
+    content: 'SOCK WISDOM';
+    position: absolute;
+    top: 16px; left: 24px;
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    color: rgba(255,224,0,0.3);
+  }
+  .gen-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(20px, 3vw, 36px);
+    color: var(--sock-white);
+    text-align: center;
+    line-height: 1.4;
+    transition: all 0.3s;
+  }
+
+  .gen-btn {
+    background: var(--sock-yellow);
+    color: var(--sock-black);
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 0.1em;
+    padding: 20px 60px;
+    cursor: none;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .gen-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--sock-red);
+    transform: translateX(-100%);
+    transition: transform 0.3s;
+  }
+  .gen-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 40px rgba(255,224,0,0.4);
+  }
+  .gen-btn:hover::before { transform: translateX(0); }
+  .gen-btn span { position: relative; z-index: 1; color: var(--sock-black); }
+  .gen-btn:hover span { color: var(--sock-white); }
+  .gen-btn:active { transform: translateY(0); }
+
+  /* ============ FOOTER ============ */
+  footer {
+    background: var(--sock-yellow);
+    padding: 60px 40px;
+    color: var(--sock-black);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: gap;
+    position: relative;
+    overflow: hidden;
+  }
+  footer::before {
+    content: 'SOCK';
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 900;
+    font-size: 200px;
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.07;
+    line-height: 1;
+    pointer-events: none;
+  }
+  .footer-logo {
+    font-family: 'Unbounded', sans-serif;
+    font-weight: 900;
+    font-size: 48px;
+    color: var(--sock-black);
+    line-height: 1;
+  }
+  .footer-logo span {
+    display: block;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    opacity: 0.5;
+    margin-top: 4px;
+  }
+  .footer-right {
+    text-align: right;
+    position: relative;
+    z-index: 1;
+  }
+  .footer-right p {
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    opacity: 0.6;
+    margin-bottom: 8px;
+  }
+  .footer-discord {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.1em;
+  }
+
+  /* ============ SCROLL ANIMATIONS ============ */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ============ MOBILE ============ */
+  @media (max-width: 900px) {
+    #stats .inner { grid-template-columns: repeat(2, 1fr); }
+    #manifesto { grid-template-columns: 1fr; gap: 40px; }
+    .cards-grid { grid-template-columns: 1fr; }
+    #fame { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 24px; text-align: center; }
+    .footer-right { text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- Floating background socks -->
+  <div class="bg-sock" style="left:5%; animation-duration:14s; animation-delay:0s; font-size:100px;">🧦</div>
+  <div class="bg-sock" style="left:20%; animation-duration:18s; animation-delay:3s; font-size:60px;">🧦</div>
+  <div class="bg-sock" style="left:45%; animation-duration:12s; animation-delay:6s; font-size:140px;">🧦</div>
+  <div class="bg-sock" style="left:70%; animation-duration:16s; animation-delay:1s; font-size:80px;">🧦</div>
+  <div class="bg-sock" style="left:88%; animation-duration:20s; animation-delay:4s; font-size:110px;">🧦</div>
+  <div class="bg-sock" style="left:35%; animation-duration:22s; animation-delay:8s; font-size:70px;">🧦</div>
+
+  <div class="hero-tag">Discord User • Legend • The One</div>
+  
+  <h1 class="hero-title">
+    <span class="title-sock">SOCK</span>
+    <span class="title-discord">@sock on Discord</span>
+  </h1>
+
+  <p class="hero-sub">
+    Not just a foot covering. A way of life.<br>
+    The most legendary Discord user to ever grace a server.
+  </p>
+
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-track">
+    <div class="ticker-item">SOCK <span class="dot">★</span></div>
+    <div class="ticker-item">DISCORD LEGEND <span class="dot">★</span></div>
+    <div class="ticker-item">THE SOCKIEST <span class="dot">★</span></div>
+    <div class="ticker-item">UNMATCHED DRIP <span class="dot">★</span></div>
+    <div class="ticker-item">ANKLE TO TOE <span class="dot">★</span></div>
+    <div class="ticker-item">CERTIFIED SOCK <span class="dot">★</span></div>
+    <div class="ticker-item">WOVEN WITH POWER <span class="dot">★</span></div>
+    <div class="ticker-item">SOCK <span class="dot">★</span></div>
+    <div class="ticker-item">DISCORD LEGEND <span class="dot">★</span></div>
+    <div class="ticker-item">THE SOCKIEST <span class="dot">★</span></div>
+    <div class="ticker-item">UNMATCHED DRIP <span class="dot">★</span></div>
+    <div class="ticker-item">ANKLE TO TOE <span class="dot">★</span></div>
+    <div class="ticker-item">CERTIFIED SOCK <span class="dot">★</span></div>
+    <div class="ticker-item">WOVEN WITH POWER <span class="dot">★</span></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div id="stats">
+  <div class="inner">
+    <div class="stat-card reveal">
+      <span class="stat-num" data-target="1">0</span>
+      <span class="stat-label">Of a Kind</span>
+    </div>
+    <div class="stat-card reveal" style="transition-delay:0.1s">
+      <span class="stat-num" data-target="2">0</span>
+      <span class="stat-label">Socks on Feet</span>
+    </div>
+    <div class="stat-card reveal" style="transition-delay:0.2s">
+      <span class="stat-num" data-target="100">0</span>
+      <span class="stat-label">% Cozy</span>
+    </div>
+    <div class="stat-card reveal" style="transition-delay:0.3s">
+      <span class="stat-num" data-target="∞">0</span>
+      <span class="stat-label">Socks Respect</span>
+    </div>
+  </div>
+</div>
+
+<!-- MANIFESTO -->
+<section id="manifesto">
+  <div class="manifesto-left reveal">
+    <div class="section-label">The Philosophy</div>
+    <h2>
+      More than<br>
+      a username,<br>
+      <em>a calling.</em>
+    </h2>
+    <p>
+      In the vast digital landscape of Discord servers, one username stands apart. 
+      Not because it demanded attention — but because it simply <em>was</em>. Sock. 
+      Clean. Iconic. Undeniable.
+    </p>
+    <p>
+      To be sock is to understand that comfort and style are not mutually exclusive. 
+      That the humblest garment can carry the greatest energy. That a good sock 
+      — like a good Discord user — shows up reliably, keeps things warm, and never 
+      misses a beat.
+    </p>
+    <p>
+      We don't just wear socks here. We <em>become</em> them.
+    </p>
+  </div>
+  <div class="sock-visual reveal" style="transition-delay:0.2s">
+    <div class="sock-ring"></div>
+    <div class="sock-ring"></div>
+    <div class="sock-ring"></div>
+    <div class="sock-big">🧦</div>
+  </div>
+</section>
+
+<!-- VARIETIES -->
+<section id="varieties">
+  <div class="section-label reveal">The Taxonomy</div>
+  <h2 class="varieties-title reveal">The Many <span>Faces</span><br>of Sock</h2>
+  <div class="cards-grid">
+    <div class="sock-card reveal" style="--card-accent: var(--sock-yellow); transition-delay:0s">
+      <span class="sock-card-num">01</span>
+      <span class="sock-card-emoji">🧦</span>
+      <div class="sock-card-title">The Classic Crew</div>
+      <div class="sock-card-desc">Mid-calf. Reliable. Has been in every server since day one. The dependable presence that anchors the chat.</div>
+      <div class="sock-card-tag" style="--tag-color: var(--sock-yellow)">Veteran</div>
+    </div>
+    <div class="sock-card reveal" style="--card-accent: var(--sock-pink); transition-delay:0.1s">
+      <span class="sock-card-num">02</span>
+      <span class="sock-card-emoji">🎯</span>
+      <div class="sock-card-title">The Ankle Striker</div>
+      <div class="sock-card-desc">Short and precise. Every message lands. No wasted words. Known to end arguments with a single perfectly-timed reply.</div>
+      <div class="sock-card-tag" style="--tag-color: var(--sock-pink)">Elite</div>
+    </div>
+    <div class="sock-card reveal" style="--card-accent: var(--sock-blue); transition-delay:0.2s">
+      <span class="sock-card-num">03</span>
+      <span class="sock-card-emoji">👑</span>
+      <div class="sock-card-title">The Knee High</div>
+      <div class="sock-card-desc">Powerful. Authoritative. When sock speaks at length, the whole server goes quiet. A rare appearance, always worth it.</div>
+      <div class="sock-card-tag" style="--tag-color: var(--sock-blue)">Legend</div>
+    </div>
+    <div class="sock-card reveal" style="--card-accent: var(--sock-green); transition-delay:0.3s">
+      <span class="sock-card-num">04</span>
+      <span class="sock-card-emoji">🌈</span>
+      <div class="sock-card-title">The No-Show</div>
+      <div class="sock-card-desc">You don't always see sock. But the impact? Always felt. The lurker energy. Pure vibes. Present without presence.</div>
+      <div class="sock-card-tag" style="--tag-color: var(--sock-green)">Ghost Mode</div>
+    </div>
+    <div class="sock-card reveal" style="--card-accent: var(--sock-red); transition-delay:0.4s">
+      <span class="sock-card-num">05</span>
+      <span class="sock-card-emoji">🔥</span>
+      <div class="sock-card-title">The Funky Pattern</div>
+      <div class="sock-card-desc">Sends the unexpected message. Chaos with a purpose. The duality of meme and wisdom in one perfectly-timed post.</div>
+      <div class="sock-card-tag" style="--tag-color: var(--sock-red)">Chaotic Good</div>
+    </div>
+    <div class="sock-card reveal" style="--card-accent: var(--sock-white); transition-delay:0.5s">
+      <span class="sock-card-num">06</span>
+      <span class="sock-card-emoji">⚡</span>
+      <div class="sock-card-title">The Compression</div>
+      <div class="sock-card-desc">Built for performance. Maximum throughput. Carries the conversation when it needs carrying. The server backbone.</div>
+      <div class="sock-card-tag" style="--tag-color: rgba(240,237,230,0.7)">MVP</div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-section">
+  <div class="marquee-row">
+    <span class="marquee-item outline">SOCK</span>
+    <span class="marquee-item fill">🧦</span>
+    <span class="marquee-item outline">DISCORD</span>
+    <span class="marquee-item fill">★</span>
+    <span class="marquee-item outline">LEGEND</span>
+    <span class="marquee-item fill">🧦</span>
+    <span class="marquee-item outline">SOCK</span>
+    <span class="marquee-item fill">★</span>
+    <span class="marquee-item outline">DISCORD</span>
+    <span class="marquee-item fill">🧦</span>
+    <span class="marquee-item outline">LEGEND</span>
+    <span class="marquee-item fill">★</span>
+    <span class="marquee-item outline">SOCK</span>
+    <span class="marquee-item fill">🧦</span>
+    <span class="marquee-item outline">DISCORD</span>
+    <span class="marquee-item fill">★</span>
+    <span class="marquee-item outline">LEGEND</span>
+    <span class="marquee-item fill">🧦</span>
+  </div>
+  <div class="marquee-row">
+    <span class="marquee-item outline">ANKLE</span>
+    <span class="marquee-item fill">🔥</span>
+    <span class="marquee-item outline">COZY</span>
+    <span class="marquee-item fill">🧦</span>
+    <span class="marquee-item outline">ICONIC</span>
+    <span class="marquee-item fill">⚡</span>
+    <span class="marquee-item outline">DRIP</span>
+    <span class="marquee-item fill">🧦</span>
+    <span class="marquee-item outline">ANKLE</span>
+    <span class="marquee-item fill">🔥</span>
+    <span class="marquee-item outline">COZY</span>
+    <span class="marquee-item fill">🧦</span>
+    <span class="marquee-item outline">ICONIC</span>
+    <span class="marquee-item fill">⚡</span>
+    <span class="marquee-item outline">DRIP</span>
+    <span class="marquee-item fill">🧦</span>
+  </div>
+</div>
+
+<!-- HALL OF FAME -->
+<section id="fame">
+  <div class="fame-left">
+    <div class="section-label reveal">Hall of Fame</div>
+    <h2 class="fame-title reveal">What They <span class="accent">Say</span><br>About Sock</h2>
+    <div class="quote-block reveal">
+      <p class="quote-text">"I logged into the server for the first time and sock said three words in general chat. I didn't know it then, but those words changed me forever."</p>
+      <p class="quote-author">— Some Guy in #general</p>
+    </div>
+    <div class="quote-block reveal" style="transition-delay:0.1s">
+      <p class="quote-text">"Asked sock for advice. They replied with just the sock emoji. I thought about it for three days. They were right."</p>
+      <p class="quote-author">— Server Regular, 2024</p>
+    </div>
+    <div class="quote-block reveal" style="transition-delay:0.2s">
+      <p class="quote-text">"sock has been in this server longer than the actual server has existed. I can't explain it. Neither can they. That's the whole point."</p>
+      <p class="quote-author">— Server Admin, Confused</p>
+    </div>
+    <div class="quote-block reveal" style="transition-delay:0.3s">
+      <p class="quote-text">"I changed my own username to sock once as a tribute. Got banned from three unrelated servers within the hour. Some names carry too much power."</p>
+      <p class="quote-author">— Anonymous, Recovering</p>
+    </div>
+  </div>
+
+  <div class="fame-right reveal" style="transition-delay:0.4s">
+    <div class="discord-card">
+      <div class="discord-header">
+        <div class="discord-avatar">🧦</div>
+        <div>
+          <div class="discord-name">sock</div>
+          <div class="discord-status">Online — Being a sock</div>
+        </div>
+      </div>
+      <div class="discord-stats">
+        <div class="d-stat">
+          <span class="d-stat-val">🧦</span>
+          <span class="d-stat-key">Username</span>
+        </div>
+        <div class="d-stat">
+          <span class="d-stat-val">∞</span>
+          <span class="d-stat-key">Respect</span>
+        </div>
+        <div class="d-stat">
+          <span class="d-stat-val">2</span>
+          <span class="d-stat-key">Feet Covered</span>
+        </div>
+        <div class="d-stat">
+          <span class="d-stat-val">1</span>
+          <span class="d-stat-key">Of a Kind</span>
+        </div>
+      </div>
+      <div class="badge-row">
+        <span class="badge blue">Discord User</span>
+        <span class="badge yellow">Sock</span>
+        <span class="badge pink">Legend</span>
+        <span class="badge green">Online</span>
+        <span class="badge red">Iconic</span>
+        <span class="badge yellow">Cozy</span>
+        <span class="badge blue">Foot Specialist</span>
+        <span class="badge pink">OG</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GENERATOR -->
+<div id="generator">
+  <div class="inner">
+    <div class="section-label reveal" style="justify-content: center; padding-left: 0;">
+      <span style="margin-left: 0;">Interactive</span>
+    </div>
+    <h2 class="reveal"><span>Sock</span> Wisdom Generator</h2>
+    <p class="reveal">Channel the ancient energy of sock. One click. Pure truth.</p>
+    <div class="gen-output reveal">
+      <div class="gen-text" id="wisdomText">Click the button below to receive your sock wisdom.</div>
+    </div>
+    <button class="gen-btn reveal" id="wisdomBtn" onclick="generateWisdom()">
+      <span>🧦 Generate Wisdom</span>
+    </button>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    SOCK
+    <span>The Discord Legend</span>
+  </div>
+  <div class="footer-right">
+    <p>Find the legend at</p>
+    <div class="footer-discord">discord.gg/sock</div>
+    <p style="margin-top: 12px; font-size: 10px;">© All socks reserved. No socks were harmed.</p>
+  </div>
+</footer>
+
+<script>
+  // CURSOR
+  const cursor = document.getElementById('cursor');
+  const dot = document.getElementById('cursorDot');
+  let mx = 0, my = 0, cx = 0, cy = 0;
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+  function animCursor() {
+    cx += (mx - cx) * 0.12;
+    cy += (my - cy) * 0.12;
+    cursor.style.left = cx + 'px';
+    cursor.style.top = cy + 'px';
+    dot.style.left = mx + 'px';
+    dot.style.top = my + 'px';
+    requestAnimationFrame(animCursor);
+  }
+  animCursor();
+
+  document.querySelectorAll('button, a, .sock-card, .quote-block').forEach(el => {
+    el.addEventListener('mouseenter', () => { cursor.style.transform = 'translate(-50%, -50%) rotate(45deg) scale(1.8)'; cursor.style.background = 'rgba(255,224,0,0.2)'; });
+    el.addEventListener('mouseleave', () => { cursor.style.transform = 'translate(-50%, -50%) rotate(45deg) scale(1)'; cursor.style.background = ''; });
+  });
+
+  // SCROLL REVEAL
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+  reveals.forEach(r => observer.observe(r));
+
+  // STAT COUNTER
+  const statNums = document.querySelectorAll('.stat-num');
+  const statObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const el = e.target;
+        const target = el.dataset.target;
+        if (target === '∞') { setTimeout(() => { el.textContent = '∞'; }, 600); return; }
+        let start = 0;
+        const end = parseInt(target);
+        const dur = 1200;
+        const step = (timestamp) => {
+          if (!start) start = timestamp;
+          const progress = Math.min((timestamp - start) / dur, 1);
+          el.textContent = Math.floor(progress * end);
+          if (progress < 1) requestAnimationFrame(step);
+          else el.textContent = target;
+        };
+        requestAnimationFrame(step);
+        statObserver.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+  statNums.forEach(n => statObserver.observe(n));
+
+  // WISDOM GENERATOR
+  const wisdoms = [
+    "🧦 A sock without a pair is just a glove for a very small foot.",
+    "🧦 In the server of life, sock is always in #general.",
+    "🧦 The true sock does not seek attention. Attention seeks sock.",
+    "🧦 They asked sock 'why socks?' Sock replied with '🧦'. Conversation over.",
+    "🧦 A mismatched sock is not a mistake. It is a statement.",
+    "🧦 Comfort is not weakness. A good sock knows this.",
+    "🧦 The quietest voice in the server often types the loudest truth.",
+    "🧦 You cannot buy cool. But you can wear it. On your feet.",
+    "🧦 sock was not the first Discord user. But sock was the most important.",
+    "🧦 To be cozy is to be powerful.",
+    "🧦 Every server needs a sock. Not all servers deserve one.",
+    "🧦 The ankle is just the beginning.",
+    "🧦 Some are born socks. Others become socks. A few simply ARE sock.",
+    "🧦 Lint is just old memories. Shake them off.",
+    "🧦 When in doubt: stay warm, stay soft, say nothing, say everything.",
+    "🧦 The elastic always holds. This is the way.",
+    "🧦 sock joined. The server was never the same. This is correct.",
+    "🧦 Not all heroes wear capes. Some wear socks.",
+  ];
+
+  let lastIdx = -1;
+  function generateWisdom() {
+    const btn = document.getElementById('wisdomBtn');
+    const text = document.getElementById('wisdomText');
+    btn.style.transform = 'translateY(2px)';
+    text.style.opacity = '0';
+    text.style.transform = 'translateY(10px)';
+    setTimeout(() => {
+      let idx;
+      do { idx = Math.floor(Math.random() * wisdoms.length); } while (idx === lastIdx);
+      lastIdx = idx;
+      text.textContent = wisdoms[idx];
+      text.style.opacity = '1';
+      text.style.transform = 'translateY(0)';
+      btn.style.transform = '';
+    }, 200);
+  }
+
+  // Animate cursor on click
+  document.addEventListener('click', () => {
+    cursor.style.transform = 'translate(-50%, -50%) rotate(45deg) scale(0.7)';
+    setTimeout(() => { cursor.style.transform = 'translate(-50%, -50%) rotate(45deg) scale(1)'; }, 150);
+  });
+</script>
+</body>
+</html>
